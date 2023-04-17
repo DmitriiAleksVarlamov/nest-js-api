@@ -4,6 +4,7 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as pactum from 'pactum';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthSingInDto, AuthSingUpDto } from '../src/auth/dto';
+import { UserEditDto } from '../src/user/dto/user.edit.dto';
 
 describe('AppController E2E', () => {
   let app: INestApplication;
@@ -88,7 +89,7 @@ describe('AppController E2E', () => {
           .post('/auth/sign-in/')
           .withBody(signInBody)
           .expectStatus(HttpStatus.OK)
-          .stores('token', 'token')
+          .stores('token', 'token');
       });
 
       it('Should throw if email empty', () => {
@@ -129,7 +130,22 @@ describe('AppController E2E', () => {
           .expectStatus(HttpStatus.OK);
       });
     });
-    describe('Edit User', () => {});
+    describe('Edit User', () => {
+      it('should edit user', () => {
+        const editBody: UserEditDto = {
+          email: 'vadim@mail.ru',
+        };
+
+        return pactum
+          .spec()
+          .patch('/users/edit/')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .withBody(editBody)
+          .expectStatus(HttpStatus.OK);
+      });
+    });
   });
   describe('Book', () => {
     describe('Add book', () => {});
