@@ -4,6 +4,8 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as pactum from 'pactum';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AuthSingInDto, AuthSingUpDto } from '../src/auth/dto';
+import { UserEditDto } from '../src/user/dto/user.edit.dto';
+import { BooksAddDto } from '../src/books/dto/books.add.dto';
 
 describe('AppController E2E', () => {
   let app: INestApplication;
@@ -88,7 +90,7 @@ describe('AppController E2E', () => {
           .post('/auth/sign-in/')
           .withBody(signInBody)
           .expectStatus(HttpStatus.OK)
-          .stores('token', 'token')
+          .stores('token', 'token');
       });
 
       it('Should throw if email empty', () => {
@@ -129,12 +131,109 @@ describe('AppController E2E', () => {
           .expectStatus(HttpStatus.OK);
       });
     });
-    describe('Edit User', () => {});
+
+    describe('Edit User', () => {
+      it('should edit user', () => {
+        const editBody: UserEditDto = {
+          email: 'vadim@mail.ru',
+        };
+
+        return pactum
+          .spec()
+          .patch('/users/edit/')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .withBody(editBody)
+          .expectStatus(HttpStatus.OK);
+      });
+    });
   });
+
   describe('Book', () => {
-    describe('Add book', () => {});
-    describe('Get books', () => {});
-    describe('Get Book by ID', () => {});
-    describe('Delete book', () => {});
+    describe('Get empty book list', () => {
+      it('should get books', () => {
+        return pactum
+          .spec()
+          .get('/books')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .expectStatus(HttpStatus.OK)
+          .expectBody([]);
+      });
+    });
+
+    describe('Add book', () => {
+      const userBook: BooksAddDto = {
+        title: 'Example advantures',
+        subtitle: 'Great',
+        description: 'Description',
+        link: 'https://example.com',
+      };
+
+      it('should add book', () => {
+        return pactum
+          .spec()
+          .post('/books/add')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .withBody(userBook)
+          .expectStatus(HttpStatus.CREATED)
+          .stores('booksId', 'id');
+      });
+    });
+
+    describe('Get books', () => {
+      it('should get books', () => {
+        return pactum
+          .spec()
+          .get('/books')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .expectStatus(HttpStatus.OK)
+          .expectJsonLength(1);
+      });
+    });
+
+    describe('Get Book by ID', () => {
+      it('should get book by ID', () => {
+        return pactum
+          .spec()
+          .get('/books/{id}')
+          .withPathParams('id', '$S{bookId}')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .expectStatus(HttpStatus.OK)
+          .expectBodyContains('$S{bookId}');
+      });
+    });
+
+    describe('Delete book', () => {
+      it('should delete book by ID', () => {
+        return pactum
+          .spec()
+          .delete('/books/{id}')
+          .withPathParams('id', '$S{bookId}')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .expectStatus(HttpStatus.OK);
+      });
+
+      it('should get empty book list', () => {
+        return pactum
+          .spec()
+          .get('/books')
+          .withHeaders({
+            Authorization: `Bearer $S{token}`,
+          })
+          .expectStatus(HttpStatus.OK)
+          .expectBody([]);
+      });
+    });
   });
 });
