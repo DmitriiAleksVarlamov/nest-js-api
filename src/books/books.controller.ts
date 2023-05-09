@@ -40,6 +40,6 @@ export class BooksController {
     @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) bookId: number,
   ) {
-    return this.booksService.getBookById(userId, bookId);
+    return this.booksService.removeBook(userId, bookId);
   }
 }

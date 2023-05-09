@@ -1,15 +1,56 @@
-import { Delete, Get, Injectable } from '@nestjs/common';
-import {BooksAddDto} from "./dto/books.add.dto";
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BooksAddDto } from './dto/books.add.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BooksService {
-  addBook(id: number, book: BooksAddDto) {}
+  constructor(private prisma: PrismaService) {}
 
-  getBooks(id: number) {
-
+  async getBooks(userId: number) {
+    return await this.prisma.book.findMany({
+      where: {
+        userId,
+      },
+    });
   }
 
-  getBookById(userId: number, bookId: number) {}
+  async addBook(userId: number, book: BooksAddDto) {
+    const createdBook = await this.prisma.book.create({
+      data: {
+        userId,
+        ...book,
+      },
+    });
 
-  removeBook(userId: number, bookId: number) {}
+    return createdBook;
+  }
+
+  async getBookById(userId: number, bookId: number) {
+    return await this.prisma.book.findFirst({
+      where: {
+        id: bookId,
+        userId,
+      },
+    });
+  }
+
+  async removeBook(userId: number, bookId: number) {
+    const book = await this.prisma.book.findUnique({
+      where: {
+        id: bookId,
+      },
+    });
+
+    if (!book || book.userId !== userId) {
+      throw new ForbiddenException('Access is denied');
+    }
+
+    await this.prisma.book.delete({
+      where: {
+        id: bookId,
+      },
+    });
+
+    return { success: true };
+  }
 }
